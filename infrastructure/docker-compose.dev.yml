@@ -1,0 +1,54 @@
+version: '3.3'
+
+volumes:
+  postgres_data:
+
+services:
+  db:
+    image: postgres:12.0-alpine
+    container_name: 'db-dev'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ../backend/envfiles/.env.dev
+    networks: 
+      - project_network
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ./Dockerfile.dev
+    container_name: 'backend-dev'
+    restart: always
+    ports:
+      - "8080:8000"
+    volumes:
+      - ../backend:/usr/src/app/backend
+      - ../data:/usr/src/app/data
+    env_file:
+      - ../backend/envfiles/.env.dev
+    depends_on:
+      - db
+    networks: 
+      - project_network
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.dev
+    command: npm start
+    container_name: 'frontend-dev'
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../frontend/:/app/
+    env_file:
+      - ../backend/envfiles/.env.dev
+    depends_on:
+      - backend
+    networks:
+      - project_network
+
+networks:
+  project_network:
+    driver: bridge
